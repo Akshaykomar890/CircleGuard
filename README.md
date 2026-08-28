@@ -1,6 +1,6 @@
 # CircleGuard
 
-CircleGuard is a native Android app for the assignment requirement:
+CircleGuard is a native Android app :
 
 > A group of users creates a tracking group and geofence. When a member exits the geofenced region, the other members are notified.
 
