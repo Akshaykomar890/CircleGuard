@@ -1,6 +1,6 @@
 # CircleGuard
 
-CircleGuard is a native Android app :
+CircleGuard is a native Android app for the assignment:
 
 > A group of users creates a tracking group and geofence. When a member exits the geofenced region, the other members are notified.
 
@@ -19,21 +19,16 @@ CircleGuard is a native Android app :
 
 The main app flow is shown below in order:
 
-### 1. Welcome
-
-![CircleGuard welcome screen](docs/screenshots/01-welcome.png)
-
-### 2. Home
-
-![CircleGuard home screen](docs/screenshots/02-home.png)
-
-### 3. Create a group
-
-![CircleGuard create group screen](docs/screenshots/03-create-group.png)
-
-### 4. Active group and tracking
-
-![CircleGuard group screen](docs/screenshots/04-group.png)
+<table>
+  <tr>
+    <td valign="top"><strong>1. Welcome</strong><br><img src="docs/screenshots/01-welcome.png" width="300" alt="CircleGuard welcome screen"></td>
+    <td valign="top"><strong>2. Home</strong><br><img src="docs/screenshots/02-home.png" width="300" alt="CircleGuard home screen"></td>
+  </tr>
+  <tr>
+    <td valign="top"><strong>3. Create a group</strong><br><img src="docs/screenshots/03-create-group.png" width="300" alt="CircleGuard create group screen"></td>
+    <td valign="top"><strong>4. Active group and tracking</strong><br><img src="docs/screenshots/04-group.png" width="300" alt="CircleGuard group screen"></td>
+  </tr>
+</table>
 
 ## Project setup
 
