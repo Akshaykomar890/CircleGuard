@@ -15,6 +15,26 @@ CircleGuard is a native Android app for the assignment requirement:
 - Cloudflare Worker notification backend
 - One active tracking group per user for this assignment
 
+## Screenshots
+
+The main app flow is shown below in order:
+
+### 1. Welcome
+
+![CircleGuard welcome screen](docs/screenshots/01-welcome.png)
+
+### 2. Home
+
+![CircleGuard home screen](docs/screenshots/02-home.png)
+
+### 3. Create a group
+
+![CircleGuard create group screen](docs/screenshots/03-create-group.png)
+
+### 4. Active group and tracking
+
+![CircleGuard group screen](docs/screenshots/04-group.png)
+
 ## Project setup
 
 1. Open the project in Android Studio.
