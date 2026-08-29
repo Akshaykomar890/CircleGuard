@@ -58,7 +58,7 @@ class WelcomeViewModel(
             is WelcomeEvent.GroupLookupCompleted -> state.copy(
                 isInitializing = false,
                 isLoading = false,
-                isComplete = event.group != null && !event.requiresName,
+                isComplete = !event.requiresName,
                 existingGroup = event.group,
                 name = event.displayName.ifBlank { state.name },
                 errorMessage = null,
