@@ -23,6 +23,10 @@ class AndroidGeofenceRepository(
     private val appContext = context.applicationContext
     private val geofencingClient: GeofencingClient =
         LocationServices.getGeofencingClient(appContext)
+    private val trackingPreferences = appContext.getSharedPreferences(
+        TRACKING_PREFERENCES,
+        Context.MODE_PRIVATE,
+    )
 
     override fun isLocationEnabled(): Boolean {
         val locationManager = appContext.getSystemService(LocationManager::class.java)
@@ -33,6 +37,9 @@ class AndroidGeofenceRepository(
                 locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true
         }
     }
+
+    override fun isTrackingRegistered(groupId: String): Boolean =
+        trackingPreferences.getString(TRACKING_GROUP_ID, null) == groupId
 
     @SuppressLint("MissingPermission")
     override suspend fun register(group: Group): Result<Unit> = runCatching {
@@ -62,10 +69,12 @@ class AndroidGeofenceRepository(
 
         geofencingClient.removeGeofences(geofencePendingIntent).await()
         geofencingClient.addGeofences(request, geofencePendingIntent).await()
+        trackingPreferences.edit().putString(TRACKING_GROUP_ID, group.id).apply()
     }
 
     override suspend fun unregister(): Result<Unit> = runCatching {
         geofencingClient.removeGeofences(geofencePendingIntent).await()
+        trackingPreferences.edit().remove(TRACKING_GROUP_ID).apply()
     }
 
     private fun hasLocationPermission(): Boolean =
@@ -94,5 +103,7 @@ class AndroidGeofenceRepository(
     private companion object {
         // New request code prevents an older immutable PendingIntent from being reused.
         const val GEOFENCE_REQUEST_CODE = 7002
+        const val TRACKING_PREFERENCES = "circleguard_tracking"
+        const val TRACKING_GROUP_ID = "tracking_group_id"
     }
 }

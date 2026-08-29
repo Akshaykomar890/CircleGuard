@@ -20,10 +20,24 @@ service cloud.firestore {
       allow get: if signedIn();
 
       allow update: if signedIn()
-        && request.resource.data.memberIds.hasAny([request.auth.uid])
-        && request.resource.data.memberIds.hasAll(resource.data.memberIds)
-        && request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'members']);
+        && (
+          (
+            request.resource.data.memberIds.hasAny([request.auth.uid])
+            && request.resource.data.memberIds.hasAll(resource.data.memberIds)
+            && request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'members'])
+          )
+          ||
+          (
+            request.resource.data.memberIds == resource.data.memberIds
+            && request.resource.data.members.diff(resource.data.members)
+              .affectedKeys().hasOnly([request.auth.uid])
+            && request.resource.data.members[request.auth.uid]
+              .diff(resource.data.members[request.auth.uid])
+              .affectedKeys().hasOnly(['displayName'])
+            && request.resource.data.members[request.auth.uid].displayName is string
+          )
+        );
 
       allow delete: if signedIn()
         && resource.data.creatorId == request.auth.uid;

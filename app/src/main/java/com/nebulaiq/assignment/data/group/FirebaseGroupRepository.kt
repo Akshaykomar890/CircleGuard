@@ -33,6 +33,20 @@ class FirebaseGroupRepository(
         Log.e(TAG, "Find user's group failed", error)
     }
 
+    override suspend fun updateMemberDisplayName(
+        groupId: String,
+        userId: String,
+        displayName: String,
+    ): Result<Unit> = runCatching {
+        firestore.collection(GROUPS_COLLECTION)
+            .document(groupId)
+            .update("members.$userId.displayName", displayName.trim())
+            .await()
+        Unit
+    }.onFailure { error ->
+        Log.e(TAG, "Update member display name failed", error)
+    }
+
     override suspend fun createGroup(
         name: String,
         radiusMeters: Double,

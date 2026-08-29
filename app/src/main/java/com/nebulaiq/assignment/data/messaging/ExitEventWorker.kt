@@ -42,6 +42,8 @@ class ExitEventWorker(
 
         return try {
             httpClient.newCall(request).execute().use { response ->
+                val responseBody = response.body?.string().orEmpty()
+                Log.d(TAG, "Worker response status=${response.code} body=$responseBody")
                 when {
                     response.isSuccessful -> Result.success()
                     response.code == 408 || response.code == 429 || response.code >= 500 -> Result.retry()

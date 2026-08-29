@@ -34,6 +34,7 @@ class GroupTrackingViewModel(
         when (event) {
             is GroupTrackingEvent.GroupLoaded -> state.copy(
                 group = event.group,
+                isTrackingEnabled = geofenceRepository.isTrackingRegistered(event.group.id),
                 errorMessage = null,
             )
             GroupTrackingEvent.ScreenResumed -> state

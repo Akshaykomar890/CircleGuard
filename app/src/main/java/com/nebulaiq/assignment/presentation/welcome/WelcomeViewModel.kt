@@ -20,7 +20,11 @@ sealed interface WelcomeEvent {
     data class NameChanged(val value: String) : WelcomeEvent
     data object ContinueClicked : WelcomeEvent
     data class AnonymousSignInSucceeded(val userId: String) : WelcomeEvent
-    data class GroupLookupCompleted(val group: Group?) : WelcomeEvent
+    data class GroupLookupCompleted(
+        val group: Group?,
+        val requiresName: Boolean = false,
+        val displayName: String = "",
+    ) : WelcomeEvent
     data object SessionCheckCompleted : WelcomeEvent
     data class AnonymousSignInFailed(val message: String) : WelcomeEvent
 }
@@ -54,8 +58,9 @@ class WelcomeViewModel(
             is WelcomeEvent.GroupLookupCompleted -> state.copy(
                 isInitializing = false,
                 isLoading = false,
-                isComplete = true,
+                isComplete = event.group != null && !event.requiresName,
                 existingGroup = event.group,
+                name = event.displayName.ifBlank { state.name },
                 errorMessage = null,
             )
             WelcomeEvent.SessionCheckCompleted -> state.copy(
@@ -76,8 +81,17 @@ class WelcomeViewModel(
                 if (userId == null) {
                     dispatch(WelcomeEvent.SessionCheckCompleted)
                 } else {
+                    val displayName = authRepository.currentUserDisplayName().orEmpty()
                     groupRepository.findGroupForUser(userId).fold(
-                        onSuccess = { dispatch(WelcomeEvent.GroupLookupCompleted(it)) },
+                        onSuccess = {
+                            dispatch(
+                                WelcomeEvent.GroupLookupCompleted(
+                                    group = it,
+                                    requiresName = displayName.isBlank(),
+                                    displayName = displayName,
+                                ),
+                            )
+                        },
                         onFailure = {
                             dispatch(
                                 WelcomeEvent.AnonymousSignInFailed(
@@ -104,12 +118,43 @@ class WelcomeViewModel(
                 )
             }
             is WelcomeEvent.AnonymousSignInSucceeded -> {
-                groupRepository.findGroupForUser(event.userId).fold(
-                    onSuccess = { dispatch(WelcomeEvent.GroupLookupCompleted(it)) },
+                val displayName = state.value.name.trim()
+                authRepository.updateDisplayName(displayName).fold(
+                    onSuccess = {
+                        groupRepository.findGroupForUser(event.userId).fold(
+                            onSuccess = { group ->
+                                if (group == null) {
+                                    dispatch(WelcomeEvent.GroupLookupCompleted(null))
+                                } else {
+                                    groupRepository.updateMemberDisplayName(
+                                        groupId = group.id,
+                                        userId = event.userId,
+                                        displayName = displayName,
+                                    ).fold(
+                                        onSuccess = { dispatch(WelcomeEvent.GroupLookupCompleted(group)) },
+                                        onFailure = {
+                                            dispatch(
+                                                WelcomeEvent.AnonymousSignInFailed(
+                                                    it.message ?: "Could not update your member name",
+                                                ),
+                                            )
+                                        },
+                                    )
+                                }
+                            },
+                            onFailure = {
+                                dispatch(
+                                    WelcomeEvent.AnonymousSignInFailed(
+                                        it.message ?: "Could not load your group",
+                                    ),
+                                )
+                            },
+                        )
+                    },
                     onFailure = {
                         dispatch(
                             WelcomeEvent.AnonymousSignInFailed(
-                                it.message ?: "Could not load your group",
+                                it.message ?: "Could not save your name",
                             ),
                         )
                     },

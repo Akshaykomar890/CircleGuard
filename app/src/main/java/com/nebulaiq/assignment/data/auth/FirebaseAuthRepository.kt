@@ -1,12 +1,16 @@
 package com.nebulaiq.assignment.data.auth
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.nebulaiq.assignment.domain.repository.AuthRepository
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.resume
 
 class FirebaseAuthRepository : AuthRepository {
     override fun currentUserId(): String? = FirebaseAuth.getInstance().currentUser?.uid
+
+    override fun currentUserDisplayName(): String? = FirebaseAuth.getInstance().currentUser?.displayName
 
     override suspend fun signInAnonymously(): Result<String> =
         suspendCancellableCoroutine { continuation ->
@@ -40,4 +44,14 @@ class FirebaseAuthRepository : AuthRepository {
                 continuation.resume(Result.failure(error))
             }
         }
+
+    override suspend fun updateDisplayName(displayName: String): Result<Unit> = runCatching {
+        val user = FirebaseAuth.getInstance().currentUser
+            ?: error("Anonymous user is not signed in")
+        user.updateProfile(
+            UserProfileChangeRequest.Builder()
+                .setDisplayName(displayName.trim())
+                .build(),
+        ).await()
+    }
 }

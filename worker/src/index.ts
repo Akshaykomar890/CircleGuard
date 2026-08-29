@@ -67,10 +67,10 @@ const handler: ExportedHandler<RuntimeEnv> = {
       const recipients = (await getDeviceTokens(env, accessToken, payload.groupId))
         .filter((recipient) => recipient.userId !== uid);
       const senderName = group.memberNames[uid] ?? "A group member";
-      const sent = await sendNotifications(
+      const delivery = await sendNotifications(
         env,
         accessToken,
-        recipients.map((recipient) => recipient.token),
+        recipients,
         {
           title: "CircleGuard alert",
           body: `${senderName} left ${group.name}`,
@@ -78,7 +78,15 @@ const handler: ExportedHandler<RuntimeEnv> = {
           groupId: payload.groupId,
         },
       );
-      return json({ accepted: true, sent }, 200);
+      console.log(JSON.stringify({
+        event: "geofence_notifications_sent",
+        eventId: payload.eventId,
+        groupId: payload.groupId,
+        recipientCount: recipients.length,
+        sent: delivery.sent,
+        failed: delivery.failed,
+      }));
+      return json({ accepted: true, sent: delivery.sent, failed: delivery.failed.length }, 200);
     } catch (error) {
       if (error instanceof HttpError) return json({ error: error.message }, error.status);
       console.error(JSON.stringify({ event: "geofence_exit_failed", error: String(error) }));
@@ -200,32 +208,47 @@ async function recordEvent(
 async function sendNotifications(
   env: RuntimeEnv,
   accessToken: string,
-  tokens: string[],
+  recipients: Array<{ userId: string; token: string }>,
   notification: { title: string; body: string; eventId: string; groupId: string },
-): Promise<number> {
+): Promise<{ sent: number; failed: Array<{ userId: string; status: number }> }> {
   let sent = 0;
-  for (const token of tokens) {
-    const response = await fetch(
-      `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}/messages:send`,
-      {
-        method: "POST",
-        headers: { ...jsonHeaders, Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({
-          message: {
-            token,
-            notification: { title: notification.title, body: notification.body },
-            data: {
-              eventId: notification.eventId,
-              groupId: notification.groupId,
+  const failed: Array<{ userId: string; status: number }> = [];
+  for (const recipient of recipients) {
+    try {
+      const response = await fetch(
+        `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}/messages:send`,
+        {
+          method: "POST",
+          headers: { ...jsonHeaders, Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({
+            message: {
+              token: recipient.token,
+              notification: { title: notification.title, body: notification.body },
+              android: {
+                priority: "HIGH",
+                notification: {
+                  channel_id: "circleguard-alerts",
+                  notification_priority: "PRIORITY_MAX",
+                },
+              },
+              data: {
+                eventId: notification.eventId,
+                groupId: notification.groupId,
+              },
             },
-          },
-        }),
-      },
-    );
-    if (!response.ok) throw new HttpError(502, "FCM delivery failed");
-    sent += 1;
+          }),
+        },
+      );
+      if (response.ok) {
+        sent += 1;
+      } else {
+        failed.push({ userId: recipient.userId, status: response.status });
+      }
+    } catch {
+      failed.push({ userId: recipient.userId, status: 0 });
+    }
   }
-  return sent;
+  return { sent, failed };
 }
 
 async function getGoogleAccessToken(env: RuntimeEnv): Promise<string> {

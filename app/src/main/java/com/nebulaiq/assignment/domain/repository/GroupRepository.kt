@@ -6,6 +6,12 @@ import com.nebulaiq.assignment.domain.model.GeoPoint
 interface GroupRepository {
     suspend fun findGroupForUser(userId: String): Result<Group?>
 
+    suspend fun updateMemberDisplayName(
+        groupId: String,
+        userId: String,
+        displayName: String,
+    ): Result<Unit>
+
     suspend fun createGroup(
         name: String,
         radiusMeters: Double,

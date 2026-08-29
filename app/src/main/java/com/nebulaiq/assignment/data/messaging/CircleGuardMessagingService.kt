@@ -1,10 +1,7 @@
 package com.nebulaiq.assignment.data.messaging
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -27,14 +24,14 @@ class CircleGuardMessagingService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        createNotificationChannel()
+        CircleGuardNotificationChannels.ensureCreated(this)
         val openAppIntent = PendingIntent.getActivity(
             this,
             NOTIFICATION_REQUEST_CODE,
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, CircleGuardNotificationChannels.ALERTS_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(message.notification?.title ?: "CircleGuard alert")
             .setContentText(message.notification?.body ?: "A member left the shared area")
@@ -53,19 +50,7 @@ class CircleGuardMessagingService : FirebaseMessagingService() {
         super.onDestroy()
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "CircleGuard alerts",
-                NotificationManager.IMPORTANCE_HIGH,
-            )
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-        }
-    }
-
     private companion object {
-        const val CHANNEL_ID = "circleguard-alerts"
         const val NOTIFICATION_REQUEST_CODE = 7100
     }
 }
