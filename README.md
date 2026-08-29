@@ -4,6 +4,10 @@ CircleGuard is a native Android app for the assignment:
 
 > A group of users creates a tracking group and geofence. When a member exits the geofenced region, the other members are notified.
 
+## Download APK
+
+[Download the latest CircleGuard APK](https://github.com/Akshaykomar890/CircleGuard/releases/download/v1.0.0/app-debug.apk)
+
 ## Scope
 
 - Kotlin and Jetpack Compose with the supplied Material 3 theme
